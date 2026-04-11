@@ -7,7 +7,7 @@ from funcs import *
 from utils import replace_activation_by_neuron, replace_maxpool2d_by_avgpool2d
 import torch.nn as nn
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 if __name__ == "__main__":
 
