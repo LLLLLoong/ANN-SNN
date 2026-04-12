@@ -52,7 +52,7 @@ if __name__ == "__main__":
         print(model)
         criterion = nn.CrossEntropyLoss()
         if args.action == 'train':
-            train_ann(train, test, model, args.epochs, args.device, criterion, args.lr, args.wd, args.id, dataset=args.data, lr_scheduler=args.lr_scheduler, train_stage='train', activation_mode=args.activation_mode)
+            train_ann(train, test, model, args.epochs, args.device, criterion, args.lr, args.wd, model_name=args.model, dataset=args.data, lr_scheduler=args.lr_scheduler, train_stage='train', activation_mode=args.activation_mode, L=args.l)
         elif args.action == 'test' or args.action == 'evaluate':
             model.cuda(args.device)
             model.eval()
@@ -61,7 +61,9 @@ if __name__ == "__main__":
                 out = model(img)
                 break
 
-            model.load_state_dict(torch.load('./saved_models/'+ args.data + '/' + args.id + '.pth'))
+            save_dir = f'./saved_models/{args.data}/{args.model}'
+            save_name = f'{args.activation_mode}_T[{args.l}]'
+            model.load_state_dict(torch.load(f'{save_dir}/{save_name}.pth'))
             
             if args.presim_len > 0:
                 cap_dataset = 10000

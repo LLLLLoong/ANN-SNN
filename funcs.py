@@ -58,7 +58,7 @@ def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
             tot += (label==out.max(1)[1]).sum().data
     return tot/length, epoch_loss/length
 
-def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn, lr=0.1, wd=5e-4, save=None, parallel=False, rank=0, dataset='cifar100',lr_scheduler='MuliStepLR', train_stage='train', activation_mode='origin'):
+def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn, lr=0.1, wd=5e-4, model_name='resnet18', parallel=False, rank=0, dataset='cifar100',lr_scheduler='MuliStepLR', train_stage='train', activation_mode='origin', L=4):
     model.cuda(device)
     para1, para2, para3 = regular_set(model)
     # para1 是 up 值
@@ -76,6 +76,14 @@ def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn,
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     elif lr_scheduler=='WarmupCosineAnnealingLR':
         scheduler = torch.optim.lr_scheduler.WarmupCosineAnnealingLR(optimizer, warmup_epochs=5, max_epochs=epochs)
+
+    save_dir = f'./saved_models/{dataset}/{model_name}'
+    os.makedirs(save_dir, exist_ok=True)
+    save_name = f'{activation_mode}_T[{L}]'
+    log_file = os.path.join(save_dir, f'{save_name}_log.txt')
+    if rank == 0:
+        with open(log_file, 'w') as f:
+            f.write("Epoch\tTrain_Loss\tVal_Loss\tVal_Acc\n")
 
     # first_iter在训练channel阈值时打开
     first_iter = False
@@ -134,10 +142,16 @@ def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn,
         tmp_acc, val_loss = eval_ann(test_dataloader, model, loss_fn, device, rank)
         if parallel:
             dist.all_reduce(tmp_acc)
-        print('Epoch {} -> Val_loss: {}, Acc: {}'.format(epoch, val_loss, tmp_acc), flush=True)
-        if rank == 0 and save != None and tmp_acc >= best_acc:
-            a = model.state_dict()
-            torch.save(model.state_dict(), f'./saved_models/' + save + '.pth')
+        train_loss = epoch_loss / len(train_dataloader) if len(train_dataloader) > 0 else 0
+        print('Epoch {} -> Train_loss: {:.4f}, Val_loss: {:.4f}, Acc: {:.4f}'.format(epoch, train_loss, val_loss, tmp_acc), flush=True)
+
+        if rank == 0:
+            with open(log_file, 'a') as f:
+                f.write(f"{epoch}\t{train_loss:.4f}\t{val_loss:.4f}\t{tmp_acc:.4f}\n")
+
+            if tmp_acc >= best_acc:
+                torch.save(model.state_dict(), os.path.join(save_dir, f'{save_name}.pth'))
+
         best_acc = max(tmp_acc, best_acc)
         print('best_acc: ', best_acc)
         # scheduler.step()
