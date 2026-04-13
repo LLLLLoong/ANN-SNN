@@ -15,5 +15,5 @@ python main.py train --bs=BATACHSIZE --model={vgg16, resnet18, resnet50, resnet1
 
 
 
-1、vgg16 on  cifar10 with QCFS
-python main.py train --bs=1000 --model=vgg16 --data=cifar10 --id=YOUR_MODEL_NAME --l=QUANTIZATION_STEP --seed=YOUR_SEED --acitvation_mode={origin,softplus}
+1、vgg16 on cifar10 with QCFS
+python main.py train --bs=1000 --model=vgg16 --data=cifar10 --id=1 --l=4 --seed=42 --activation_mode=origin

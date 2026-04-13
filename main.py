@@ -19,7 +19,7 @@ if __name__ == "__main__":
     parser.add_argument('--bs', default=128, type=int, help='Batchsize')
     parser.add_argument('--lr', default=0.1, type=float, help='Learning rate') 
     parser.add_argument('--wd', default=5e-4, type=float, help='Weight decay')
-    parser.add_argument('--epochs', default=200, type=int, help='Training epochs') # better if set to 300 for CIFAR dataset
+    parser.add_argument('--epochs', default=2, type=int, help='Training epochs') # better if set to 300 for CIFAR dataset
     parser.add_argument('--id', default='train_test', type=str, help='Model identifier')
     parser.add_argument('--device', default='cuda', type=str, help='cuda or cpu')
     parser.add_argument('--l', default=4, type=int, help='L')

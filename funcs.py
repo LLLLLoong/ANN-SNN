@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from torch import nn
 import torch
 from tqdm import tqdm
@@ -83,7 +84,7 @@ def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn,
     log_file = os.path.join(save_dir, f'{save_name}_log.txt')
     if rank == 0:
         with open(log_file, 'w') as f:
-            f.write("Epoch\tTrain_Loss\tVal_Loss\tVal_Acc\n")
+            f.write("Epoch\tTrain_Loss\tVal_Loss\tVal_Acc\tTime(s)\n")
 
     # first_iter在训练channel阈值时打开
     first_iter = False
@@ -91,6 +92,7 @@ def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn,
         first_iter=True
     best_acc = 0
     for epoch in range(epochs):
+        start_time = time.time()
         epoch_loss = 0
         length = 0
         model.train()
@@ -143,11 +145,12 @@ def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn,
         if parallel:
             dist.all_reduce(tmp_acc)
         train_loss = epoch_loss / len(train_dataloader) if len(train_dataloader) > 0 else 0
-        print('Epoch {} -> Train_loss: {:.4f}, Val_loss: {:.4f}, Acc: {:.4f}'.format(epoch, train_loss, val_loss, tmp_acc), flush=True)
+        epoch_time = time.time() - start_time
+        print('Epoch {} -> Train_loss: {:.4f}, Val_loss: {:.4f}, Acc: {:.4f}, Time: {:.2f}s'.format(epoch, train_loss, val_loss, tmp_acc, epoch_time), flush=True)
 
         if rank == 0:
             with open(log_file, 'a') as f:
-                f.write(f"{epoch}\t{train_loss:.4f}\t{val_loss:.4f}\t{tmp_acc:.4f}\n")
+                f.write(f"{epoch}\t{train_loss:.4f}\t{val_loss:.4f}\t{tmp_acc:.4f}\t{epoch_time:.2f}\n")
 
             if tmp_acc >= best_acc:
                 torch.save(model.state_dict(), os.path.join(save_dir, f'{save_name}.pth'))
