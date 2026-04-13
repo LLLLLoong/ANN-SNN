@@ -3,3 +3,4 @@
 *.yml
 datasets/
 saved_models/
+*.txt
