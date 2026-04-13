@@ -16,4 +16,25 @@ python main.py train --bs=BATACHSIZE --model={vgg16, resnet18, resnet50, resnet1
 
 
 1、vgg16 on cifar10 with QCFS
-python main.py train --bs=1000 --model=vgg16 --data=cifar10 --id=1 --l=4 --seed=42 --activation_mode=origin
+python main.py train --bs=500 --model=vgg16 --data=cifar10 --id=1 --l=4 --seed=42 --activation_mode=origin
+
+2、resnet18 on cifar10 with QCFS
+python main.py train --bs=500 --model=resnet18 --data=cifar10 --id=2 --l=4 --seed=42 --activation_mode=origin
+
+3、resnet50 on cifar10 with QCFS
+python main.py train --bs=500 --model=resnet50 --data=cifar10 --id=3 --l=4 --seed=42 --activation_mode=origin
+
+4、resnet101 on cifar10 with QCFS
+python main.py train --bs=500 --model=resnet101 --data=cifar10 --id=4 --l=4 --seed=42 --activation_mode=origin
+
+5、vgg16 on cifar100 with QCFS
+python main.py train --bs=1000 --model=vgg16 --data=cifar100 --id=5 --l=4 --seed=42 --activation_mode=origin
+
+6、resnet18 on cifar100 with QCFS
+python main.py train --bs=1000 --model=resnet18 --data=cifar100 --id=6 --l=4 --seed=42 --activation_mode=origin
+
+7、resnet50 on cifar100 with QCFS
+python main.py train --bs=1000 --model=resnet50 --data=cifar100 --id=7 --l=4 --seed=42 --activation_mode=origin
+
+8、resnet101 on cifar100 with QCFS
+python main.py train --bs=1000 --model=resnet101 --data=cifar100 --id=8 --l=4 --seed=42 --activation_mode=origin
