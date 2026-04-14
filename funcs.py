@@ -59,7 +59,7 @@ def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
             tot += (label==out.max(1)[1]).sum().data
     return tot/length, epoch_loss/length
 
-def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn, lr=0.1, wd=5e-4, model_name='resnet18', parallel=False, rank=0, dataset='cifar100',lr_scheduler='MuliStepLR', train_stage='train', activation_mode='origin', L=4):
+def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn, lr=0.1, wd=5e-4, model_name='resnet18', parallel=False, rank=0, dataset='cifar100',lr_scheduler='MuliStepLR', train_stage='train', activation_mode='origin', L=4, resume=False):
     model.cuda(device)
     para1, para2, para3 = regular_set(model)
     # para1 是 up 值
@@ -82,16 +82,39 @@ def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn,
     os.makedirs(save_dir, exist_ok=True)
     save_name = f'{activation_mode}_T[{L}]'
     log_file = os.path.join(save_dir, f'{save_name}_log.txt')
+    
+    ckpt_dir = f'./saved_models/checkpoints/{dataset}/{model_name}'
+    os.makedirs(ckpt_dir, exist_ok=True)
+    ckpt_path = os.path.join(ckpt_dir, f'ckpt_{activation_mode}_T[{L}]_{dataset}_{model_name}_latest.pth')
+
+    start_epoch = 0
+    best_acc = 0
+
+    if resume and os.path.exists(ckpt_path):
+        if rank == 0:
+            print(f"==> Resuming from checkpoint: {ckpt_path}")
+        checkpoint = torch.load(ckpt_path, map_location='cpu')
+        start_epoch = checkpoint['epoch'] + 1
+        best_acc = checkpoint['best_acc']
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        if 'scheduler_state_dict' in checkpoint and scheduler is not None:
+            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        if rank == 0:
+            print(f"==> Loaded checkpoint from epoch {checkpoint['epoch']} with best_acc: {best_acc:.4f}\n")
+
     if rank == 0:
-        with open(log_file, 'w') as f:
-            f.write("Epoch\tTrain_Loss\tVal_Loss\tVal_Acc\tTime(s)\n")
+        mode = 'a' if resume and os.path.exists(ckpt_path) else 'w'
+        with open(log_file, mode) as f:
+            if mode == 'w':
+                f.write("Epoch\tTrain_Loss\tVal_Loss\tVal_Acc\tTime(s)\n")
 
     # first_iter在训练channel阈值时打开
     first_iter = False
     if train_stage=='ft':
         first_iter=True
-    best_acc = 0
-    for epoch in range(epochs):
+
+    for epoch in range(start_epoch, epochs):
         start_time = time.time()
         epoch_loss = 0
         length = 0
@@ -154,6 +177,17 @@ def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn,
 
             if tmp_acc >= best_acc:
                 torch.save(model.state_dict(), os.path.join(save_dir, f'{save_name}.pth'))
+                
+            # Save checkpoint for resume
+            ckpt_state = {
+                'epoch': epoch,
+                'best_acc': max(tmp_acc, best_acc),
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
+                'args': {'activation_mode': activation_mode, 'L': L, 'dataset': dataset, 'model_name': model_name}
+            }
+            torch.save(ckpt_state, ckpt_path)
 
         best_acc = max(tmp_acc, best_acc)
         print('best_acc: ', best_acc)

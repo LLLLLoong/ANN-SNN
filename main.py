@@ -33,6 +33,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr_scheduler', type=str, default='CosineAnnealingLR')
     parser.add_argument('--init_threshold', type=float, default=4.)
     parser.add_argument('--presim_len', type=int, default=0, help='Pre Simulation length of COS')
+    parser.add_argument('--resume', action='store_true', help='Resume training from checkpoint')
     args = parser.parse_args()
     print(args)
     seed_all(args.seed)
@@ -52,7 +53,7 @@ if __name__ == "__main__":
         print(model)
         criterion = nn.CrossEntropyLoss()
         if args.action == 'train':
-            train_ann(train, test, model, args.epochs, args.device, criterion, args.lr, args.wd, model_name=args.model, dataset=args.data, lr_scheduler=args.lr_scheduler, train_stage='train', activation_mode=args.activation_mode, L=args.l)
+            train_ann(train, test, model, args.epochs, args.device, criterion, args.lr, args.wd, model_name=args.model, dataset=args.data, lr_scheduler=args.lr_scheduler, train_stage='train', activation_mode=args.activation_mode, L=args.l, resume=args.resume)
         elif args.action == 'test' or args.action == 'evaluate':
             model.cuda(args.device)
             model.eval()
