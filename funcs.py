@@ -57,7 +57,7 @@ def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
             epoch_loss += loss.item()
             length += len(label)    
             tot += (label==out.max(1)[1]).sum().data
-    return tot/length, epoch_loss/length
+    return tot/length, epoch_loss/len(test_dataloader)
 
 def train_ann(train_dataloader, test_dataloader, model, epochs, device, loss_fn, lr=0.1, wd=5e-4, model_name='resnet18', parallel=False, rank=0, dataset='cifar100',lr_scheduler='MuliStepLR', train_stage='train', activation_mode='origin', L=4, resume=False):
     model.cuda(device)
