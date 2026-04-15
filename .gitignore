@@ -4,3 +4,5 @@
 datasets/
 saved_models/
 *.txt
+figures/
+figures_snn/
